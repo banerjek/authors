@@ -17,7 +17,7 @@ my $endrecord_regex = qr/<\/owl:Class>/;
 ###########################
 # Organizations are stored in hashes of hashes and peop
 my %organizations = ();
-my %organization_names = ();
+my %all_names = ();
 my %organization_members = ();
 
 my $isunit = 0;
@@ -46,33 +46,23 @@ foreach $line(@source_data) {
 		}
 	if ($line =~ /$member_of_regex/) {
 		$member_of = $1;	
-		push @{$organization_members{$member_of}}, $ohsu_id;
-		#######################################
-		# store members in comma delimited list
-		#######################################
-	#	if ($organization_members{$member_of}) {
-	#		$organization_members{$member_of} .= ",$ohsu_id";
-	#		} else {
-	#		$organization_members{$member_of} = $ohsu_id;
-	#		}
+		#push @{$organization_members{$member_of}}, $ohsu_id;
+		push @{$organization_members{$member_of}}, "$scopus_id $label";
 		}
 	if ($line =~ /$label_scopus_regex/) {
 		$scopus_id = $2;
 		$label = $1;
+		$all_names{$ohsu_id} = $label;
 		}
 
-	################################
-	# Detect end of record and print
-	################################
+	##########################################
+	# Detect end of record and reset variables
+	##########################################
 	if ($line =~ /$endrecord_regex/) {
-		if ($isunit == 1) {
-			$organization_names{$ohsu_id} = $label;
-			#print "$scopus_id -- $ohsu_id -- $label\n";
-			$scopus_id = '';
-			$ohsu_id = '';
-			$label = '';
-			$isunit = 0;
-			}
+		$scopus_id = '';
+		$ohsu_id = '';
+		$label = '';
+		$isunit = 0;
 		}
 	}
 
@@ -81,7 +71,7 @@ foreach $line(@source_data) {
 	######################
 	
 	for my $org_key(keys %organization_members) {
-		print "$organization_names{$org_key}\n";
+		print "$all_names{$org_key}\n";
 		my $members = join(':', @{$organization_members{$org_key}});
 		print "$members\n";
 

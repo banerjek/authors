@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+ use List::MoreUtils qw(uniq);
 
 my $infile = 'ohsu-metadata.owl';
 my $outfile = 'author-data.txt';
@@ -9,7 +10,7 @@ my $outfile = 'author-data.txt';
 #####################################
 # store some regexes to get key fields
 my $ohsu_regex = qr/<owl:Class rdf:about="http:\/\/ohsu-metadata\/([^"]*)">/; 
-my $label_regex = qr/<rdfs:label rdf:datatype="&xsd;string">([^_]*)[_<]/; 
+my $label_regex = qr/<rdfs:label [^>]*>([^_<]*)[_<]/; 
 my $scopus_regex = qr/<ohsu-metadata3:hasIdentifier rdf:datatype="&xsd;string">ScopusAuthor:([0-9]*)</; 
 my $member_of_regex = qr/<rdfs:subClassOf rdf:resource="http:\/\/ohsu-metadata\/([^"]*)"/; 
 my $detectunit_regex = qr/ohsu-metadata3:hasName rdf:/; 
@@ -27,6 +28,7 @@ my $ohsu_id = '';
 my $scopus_id = '';
 my $record_id = '';
 my $member_of = '';
+my $memberships = '';
 my $label = '';
 my $line = '';
 
@@ -65,7 +67,7 @@ foreach $line(@source_data) {
 		# keep a list of memberships until we know this 
 		# record is for a person or unit
 		###############################################
-		push @memberships, $ohsu_id;
+		#push @memberships, $member_of;
 		}
 
 	##########################################
@@ -75,7 +77,12 @@ foreach $line(@source_data) {
 		##################
 		# Record the label
 		##################
-		$all_names{$record_id} = $label;
+		if (length($label) > 1) {
+			$all_names{$record_id} = $label;
+			} else {
+			$all_names{$record_id} = "No label for $record_id";
+			}
+
 		###################################################
 		# Add memberships
 		#
@@ -83,8 +90,14 @@ foreach $line(@source_data) {
 		# are treated differently based on ID pattern match
 		###################################################
 		foreach my $membership(@memberships) {
-			push @{$organization_members{$member_of}}, $record_id;
+			##########################################
+			# Ignore authors with no SCOPUS ID for now
+			##########################################
+			if (length($record_id) > 1) {
+				push @{$organization_members{$member_of}}, $record_id;
+				}
 			}
+
 		$scopus_id = '';
 		$ohsu_id = '';
 		$record_id = '';
@@ -100,6 +113,6 @@ foreach $line(@source_data) {
 	
 	for my $org_key(keys %organization_members) {
 		print "$all_names{$org_key} ----- $org_key\n";
-		my $members = join("\n", @{$organization_members{$org_key}});
+		my $members = join("\n   ", @{$organization_members{$org_key}});
 		print "$members\n";
 		}

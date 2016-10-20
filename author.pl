@@ -21,6 +21,7 @@ my $endrecord_regex = qr/<\/owl:Class>/;
 my %organizations = ();
 my %all_names = ();
 my %organization_members = ();
+my %processed_organizations = ();
 
 my $isunit = 0;
 my $record = '';
@@ -34,9 +35,56 @@ my $line = '';
 
 my @source_data = [];
 my @memberships = [];
+my @contains_organizations = [];
+my @all_organization_members = [];
 
 local $/ = undef;
 $/ = "\n";
+
+sub listMembers {
+	my ($member_key) = @_;
+
+	for my $@member(@{$organization_members{$member_key}}) {
+		if ($member =~ /[a-z]/) {
+			if (!exists($processed_organizations{$member})) {
+				##########################################################
+				# Remember processed organization in hash to prevent loops
+				##########################################################
+				$processed_organizations{$member} = 1;
+				print "$member\n";
+				listMembers($member);
+				} 
+			} else {
+			########################################
+			# Remember all members in a global array
+			########################################
+			push @all_organization_members, $member;
+			}
+		}
+	}
+
+sub printOrgsAndMembers {
+	######################
+	# iterate through keys
+	######################
+	
+	for my $org_key(keys %organization_members) {
+		#######################################################################
+		# Hash to keep track of processed organizations to avoid recursive loops
+		#######################################################################
+		%processed_organizations = ();
+		$processed_organizations{$org_key} = 1;
+		@all_organization_members = [];
+		@contains_organizations = [];
+		
+		listMembers($org_key);
+		print "$all_names{$org_key}\n";
+
+		for my $member(@all_organization_members) {
+			print "   $member\n";
+			}
+		}
+	}
 
 open (INFILE, $infile) or die("Unable to open data file \"$infile\"");
 @source_data = <INFILE>;
@@ -107,12 +155,4 @@ foreach $line(@source_data) {
 		}
 	}
 
-	######################
-	# iterate through keys
-	######################
-	
-	for my $org_key(keys %organization_members) {
-		print "$all_names{$org_key} ----- $org_key\n";
-		my $members = join("\n   ", @{$organization_members{$org_key}});
-		print "$members\n";
-		}
+	printOrgsAndMembers();

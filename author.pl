@@ -76,19 +76,20 @@ sub printOrgsAndMembers {
 		%processed_organizations = ();
 		$processed_organizations{$org_key} = 1;
 		@all_organization_members = [];
-		$contains_organizations = '';
 		
-		listMembers($org_key);
 		$members = '';
+		$contains_organizations = '';
+
+		listMembers($org_key);
+		$contains_organizations= '';
 
 		for my $member(@all_organization_members) {
-			$contains_organizations= '';
 			if (substr($member,0,5) ne 'ARRAY') {
 				if ($member =~ /[a-z]/) {
 					if ($contains_organizations eq '') {
-						$contains_organizations = $all_names{$member};
+						$contains_organizations = "<li>$all_names{$member}</li>";
 						} else {
-						$contains_organizations .= ",$all_names{$member}";
+						$contains_organizations .= "<li>$all_names{$member}</li>";
 						}
 					} else {
 						if ($members eq '') {
@@ -102,6 +103,7 @@ sub printOrgsAndMembers {
 		print AUTHORS "$org_key\t$all_names{$org_key}\t$members" . '@';
 		if ($contains_organizations ne '') {
 						print SUBORGS "suborgs[\"$org_key\"]=\"$contains_organizations\";\n";
+						#print "$all_names{$org_key}: $contains_organizations\n";
 			}
 		}
 	}
@@ -116,12 +118,14 @@ foreach $line(@source_data) {
 	#####################
 	if ($line =~ /$ohsu_regex/) {
 		$ohsu_id = $1;
+		$ohsu_id =~ s/[^0-9a-z\-]//g;
 		}
 	if ($line =~ /$label_regex/) {
 		$label = $1;
 		}
 	if ($line =~ /$scopus_regex/) {
 		$scopus_id = $1;
+		$scopus_id =~ s/[^0-9]//g;
 		$record_id = $scopus_id;
 		}
 
@@ -177,7 +181,7 @@ foreach $line(@source_data) {
 
 	open (SUBORGS, '>:utf8', 'suborgs.js');
 	print SUBORGS "var suborgs = new Object();\n";
-	open (AUTHORS, '>:utf8', 'author.js');
+	open (AUTHORS, '>:utf8', 'authors.js');
 	print AUTHORS 'var authors=\'';
 	printOrgsAndMembers();
 	print AUTHORS '\';';

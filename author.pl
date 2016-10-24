@@ -23,11 +23,13 @@ my %all_names = ();
 my %organization_members = ();
 my %processed_organizations = ();
 
+my $contains_organizations = '';
 my $isunit = 0;
 my $record = '';
 my $ohsu_id = '';
 my $scopus_id = '';
 my $record_id = '';
+my $members = '';
 my $member_of = '';
 my $memberships = '';
 my $label = '';
@@ -35,23 +37,23 @@ my $line = '';
 
 my @source_data = [];
 my @memberships = [];
-my @contains_organizations = [];
 my @all_organization_members = [];
 
 local $/ = undef;
 $/ = "\n";
 
+
 sub listMembers {
 	my ($member_key) = @_;
 
-	for my $@member(@{$organization_members{$member_key}}) {
+	for my $member(@{$organization_members{$member_key}}) {
 		if ($member =~ /[a-z]/) {
 			if (!exists($processed_organizations{$member})) {
 				##########################################################
 				# Remember processed organization in hash to prevent loops
 				##########################################################
 				$processed_organizations{$member} = 1;
-				print "$member\n";
+				push @all_organization_members, $member;
 				listMembers($member);
 				} 
 			} else {
@@ -62,11 +64,10 @@ sub listMembers {
 			}
 		}
 	}
-
 sub printOrgsAndMembers {
 	######################
 	# iterate through keys
-	######################
+	#####################
 	
 	for my $org_key(keys %organization_members) {
 		#######################################################################
@@ -75,13 +76,32 @@ sub printOrgsAndMembers {
 		%processed_organizations = ();
 		$processed_organizations{$org_key} = 1;
 		@all_organization_members = [];
-		@contains_organizations = [];
+		$contains_organizations = '';
 		
 		listMembers($org_key);
-		print "$all_names{$org_key}\n";
+		$members = '';
 
 		for my $member(@all_organization_members) {
-			print "   $member\n";
+			$contains_organizations= '';
+			if (substr($member,0,5) ne 'ARRAY') {
+				if ($member =~ /[a-z]/) {
+					if ($contains_organizations eq '') {
+						$contains_organizations = $all_names{$member};
+						} else {
+						$contains_organizations .= ",$all_names{$member}";
+						}
+					} else {
+						if ($members eq '') {
+							$members = $member;
+							} else {
+							$members .= ", $member";
+							}
+					}
+				}
+			}
+		print AUTHORS "$org_key\t$all_names{$org_key}\t$members" . '@';
+		if ($contains_organizations ne '') {
+						print SUBORGS "suborgs[\"$org_key\"]=\"$contains_organizations\";\n";
 			}
 		}
 	}
@@ -155,4 +175,11 @@ foreach $line(@source_data) {
 		}
 	}
 
+	open (SUBORGS, '>:utf8', 'suborgs.js');
+	print SUBORGS "var suborgs = new Object();\n";
+	open (AUTHORS, '>:utf8', 'author.js');
+	print AUTHORS 'var authors=\'';
 	printOrgsAndMembers();
+	print AUTHORS '\';';
+	close (AUTHORS);
+	close (SUBORGS);

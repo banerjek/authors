@@ -131,17 +131,17 @@ foreach $line(@source_data) {
 		$record_id = $scopus_id;
 		}
 
-	if ($line =~ /$detectunit_regex/) {
-		$isunit = 1;	
-		$record_id = $ohsu_id;
-		}
 	if ($line =~ /$member_of_regex/) {
 		$member_of = $1;	
 		###############################################
 		# keep a list of memberships until we know this 
 		# record is for a person or unit
 		###############################################
-		#push @memberships, $member_of;
+		}
+
+	if ($line =~ /$detectunit_regex/) {
+		$isunit = 1;	
+		$record_id = $ohsu_id;
 		}
 
 	##########################################

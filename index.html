@@ -1,0 +1,36 @@
+<html>
+
+<head>
+<link title="new" REL=stylesheet HREF="includes/default.css" type="text/css" />
+
+</head>
+<body onload="document.f.userinput.focus();">
+<div id="nav">
+				<table class="top"><tr><td><center><h1>SCOPUS Query Tool</h1></center></td></tr><tr><td></td></tr></table><p />
+				<center><form name="f" onSubmit="process(document.f); return false;">
+
+	<input type="text" name="userinput" size="25" onKeyUp="process(document.f);self.focus();document.f.userinput.focus();" />
+	<input type="submit" value="Find It!">
+	<p /><b>Enter Query Above</b>
+<p />
+</form>
+<br />&nbsp;<p />
+</center>
+</div>
+<div id="results">
+				<table border="0"><tr><td><h1><br /><center>Data files are loading. Please wait....</center></h1></td></tr></table>
+</div>
+<script language="javascript" src="includes/suborgs.js"></script>
+<script language="javascript" src="includes/authors.js"></script>
+<script language="javascript" src="includes/calculate.js"></script>
+
+<script language="javascript">
+(function loadFixed() {
+        var node = document.getElementById("results");
+        node.innerHTML='<b>This tool helps build SCOPUS queries by finding individuals belonging to units and subunits</b>';
+    })();
+</script>
+
+</body>
+
+</html>

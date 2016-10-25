@@ -36,7 +36,7 @@ my $label = '';
 my $line = '';
 
 my @source_data = [];
-my @memberships = [];
+my @indiv_memberships = [];
 my @all_organization_members = [];
 
 local $/ = undef;
@@ -113,12 +113,14 @@ open (INFILE, $infile) or die("Unable to open data file \"$infile\"");
 close $infile;
 
 foreach $line(@source_data) {
-	#####################
-	# Get OHSU identifier
-	#####################
+	######################################
+	# Get OHSU identifier. This is the
+	# beginning of a record
+	######################################
 	if ($line =~ /$ohsu_regex/) {
 		$ohsu_id = $1;
 		$ohsu_id =~ s/[^0-9a-z\-]//g;
+		$member_of = '';
 		}
 	if ($line =~ /$label_regex/) {
 		$label = $1;
@@ -161,7 +163,7 @@ foreach $line(@source_data) {
 		# People and units are stored in same hash but 
 		# are treated differently based on ID pattern match
 		###################################################
-		foreach my $membership(@memberships) {
+		foreach my $membership(@indiv_memberships) {
 			##########################################
 			# Ignore authors with no SCOPUS ID for now
 			##########################################
@@ -174,8 +176,9 @@ foreach $line(@source_data) {
 		$ohsu_id = '';
 		$record_id = '';
 		$label = '';
+		$member_of = '';
 		$isunit = 0;
-		@memberships = [];
+		@indiv_memberships = [];
 		}
 	}
 

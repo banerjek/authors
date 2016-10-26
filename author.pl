@@ -7,6 +7,13 @@ use warnings;
 my $infile = 'ohsu-metadata.owl';
 my $outfile = 'author-data.txt';
 
+open (PARENTORGS, '>:utf8', 'parentorgs.js');
+print PARENTORGS "var parentorgs = new Object();\n";
+open (SUBORGS, '>:utf8', 'suborgs.js');
+print SUBORGS "var suborgs = new Object();\n";
+open (AUTHORS, '>:utf8', 'authors.js');
+print AUTHORS 'var authors=\'';
+
 #####################################
 # store some regexes to get key fields
 my $ohsu_regex = qr/<owl:Class rdf:about="http:\/\/ohsu-metadata\/([^"]*)">/; 
@@ -21,6 +28,7 @@ my $endrecord_regex = qr/<\/owl:Class>/;
 my %organizations = ();
 my %all_names = ();
 my %organization_members = ();
+my %org_hierarchy = ();
 my %processed_organizations = ();
 
 my $contains_organizations = '';
@@ -64,10 +72,29 @@ sub listMembers {
 			}
 		}
 	}
+
+sub printOrgHierarchy {
+	my @org_keys = keys %org_hierarchy;
+	my $entry = '';
+	for my $org(@org_keys) {
+		$entry = '';
+		for my $parent(@{$org_hierarchy{$org}}) {
+			if ($entry eq '') {
+				$entry = $all_names{$parent};
+				} else {
+				$entry .= " | $all_names{$parent}";
+				}
+			if ($entry) {
+				print PARENTORGS "parentorgs[\"$org\"]=\"$entry\";\n";
+				}
+			}
+		}
+	}
+
 sub printOrgsAndMembers {
 	######################
 	# iterate through keys
-	#####################
+	######################
 	
 	for my $org_key(keys %organization_members) {
 		#######################################################################
@@ -82,6 +109,10 @@ sub printOrgsAndMembers {
 
 		listMembers($org_key);
 		$contains_organizations= '';
+
+		################################################
+		# Generate the list of names to string match on 
+		################################################
 
 		for my $member(@all_organization_members) {
 			if (substr($member,0,5) ne 'ARRAY') {
@@ -100,10 +131,14 @@ sub printOrgsAndMembers {
 					}
 				}
 			}
-		print AUTHORS "$org_key\t$all_names{$org_key}\t$members" . '@';
-		if ($contains_organizations ne '') {
-						print SUBORGS "suborgs[\"$org_key\"]=\"$contains_organizations\";\n";
-						#print "$all_names{$org_key}: $contains_organizations\n";
+		#####################################################
+		# Generate javascript hash containing the memberships
+		#####################################################
+		if (length($org_key) > 1 && length($members) > 1 && defined($all_names{$org_key})) {
+			print AUTHORS "$org_key\t$all_names{$org_key}\t$members" . '@';
+			if ($contains_organizations ne '') {
+				print SUBORGS "suborgs[\"$org_key\"]=\"$contains_organizations\";\n";
+				}
 			}
 		}
 	}
@@ -138,7 +173,6 @@ foreach $line(@source_data) {
 		# record is for a person or unit
 		###############################################
 		}
-
 	if ($line =~ /$detectunit_regex/) {
 		$isunit = 1;	
 		$record_id = $ohsu_id;
@@ -167,8 +201,15 @@ foreach $line(@source_data) {
 			##########################################
 			# Ignore authors with no SCOPUS ID for now
 			##########################################
-			if (length($record_id) > 1) {
+			if (length($record_id) > 1 && length($member_of) > 1) {
 				push @{$organization_members{$member_of}}, $record_id;
+				######################################################
+				# Print to the hierarcy file so context for orgs
+				# is obvious in search results
+				# ####################################################
+				if ($record_id =~ /[a-z]/) {
+					push @{$org_hierarchy{$record_id}}, $member_of;
+					}
 				}
 			}
 
@@ -182,11 +223,9 @@ foreach $line(@source_data) {
 		}
 	}
 
-	open (SUBORGS, '>:utf8', 'suborgs.js');
-	print SUBORGS "var suborgs = new Object();\n";
-	open (AUTHORS, '>:utf8', 'authors.js');
-	print AUTHORS 'var authors=\'';
 	printOrgsAndMembers();
+	printOrgHierarchy();
 	print AUTHORS '\';';
 	close (AUTHORS);
 	close (SUBORGS);
+	close (PARENTORGS);

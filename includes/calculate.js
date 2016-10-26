@@ -211,7 +211,7 @@ var regexsearch = new RegExp(regmatch, "i");
 					else
 					{
 					founditems += '<tr><td>'
-					+ cellarray[1]
+					+ cellarray[1] + parentorg
 					+ '</td><td>'
 					+ subs 
 					+ '</td><td>'

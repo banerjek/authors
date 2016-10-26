@@ -183,6 +183,8 @@ var regexsearch = new RegExp(regmatch, "i");
 			recno = cellarray[0];
 			subs = suborgs[recno];
 
+			// recno somehow not getting read for some units -- need to resolve
+
 			if (!subs) {
 				subs = '';
 				}
@@ -192,7 +194,7 @@ var regexsearch = new RegExp(regmatch, "i");
 			if (!parentorg) {
 				parentorg = '';
 				} else {
-				parentorg = "\nI" + parentorg + ')';
+				parentorg = "<br />(" + parentorg + ')';
 				}
 
 			if (found < 500) {

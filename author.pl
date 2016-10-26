@@ -46,6 +46,7 @@ my $line = '';
 my @source_data = [];
 my @indiv_memberships = [];
 my @all_organization_members = [];
+my @contains_organizations = [];
 
 local $/ = undef;
 $/ = "\n";
@@ -95,6 +96,7 @@ sub printOrgsAndMembers {
 	######################
 	# iterate through keys
 	######################
+	my @sorted_orgs = [];
 	
 	for my $org_key(keys %organization_members) {
 		#######################################################################
@@ -103,12 +105,15 @@ sub printOrgsAndMembers {
 		%processed_organizations = ();
 		$processed_organizations{$org_key} = 1;
 		@all_organization_members = [];
+		@contains_organizations = [];
 		
 		$members = '';
 		$contains_organizations = '';
 
 		listMembers($org_key);
 		$contains_organizations= '';
+		@sorted_orgs = [];
+		@contains_organizations = [];
 
 		################################################
 		# Generate the list of names to string match on 
@@ -117,6 +122,7 @@ sub printOrgsAndMembers {
 		for my $member(@all_organization_members) {
 			if (substr($member,0,5) ne 'ARRAY') {
 				if ($member =~ /[a-z]/) {
+					push @contains_organizations, "<li>$all_names{$member}</li>";
 					if ($contains_organizations eq '') {
 						$contains_organizations = "<li>$all_names{$member}</li>";
 						} else {
@@ -137,6 +143,9 @@ sub printOrgsAndMembers {
 		if (length($org_key) > 1 && length($members) > 1 && defined($all_names{$org_key})) {
 			print AUTHORS "$org_key\t$all_names{$org_key}\t$members" . '@';
 			if ($contains_organizations ne '') {
+				@sorted_orgs = sort @contains_organizations;
+				$contains_organizations = join(" ", @sorted_orgs);
+				$contains_organizations =~ s/ ARRAY.*$//;
 				print SUBORGS "suborgs[\"$org_key\"]=\"$contains_organizations\";\n";
 				}
 			}

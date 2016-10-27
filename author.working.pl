@@ -7,11 +7,11 @@ use warnings;
 my $infile = 'ohsu-metadata.owl';
 my $outfile = 'author-data.txt';
 
-open (PARENTORGS, '>:utf8', 'includes/parentorgs.js');
+open (PARENTORGS, '>:utf8', 'parentorgs.js');
 print PARENTORGS "var parentorgs = new Object();\n";
-open (SUBORGS, '>:utf8', 'includes/suborgs.js');
+open (SUBORGS, '>:utf8', 'suborgs.js');
 print SUBORGS "var suborgs = new Object();\n";
-open (AUTHORS, '>:utf8', 'includes/authors.js');
+open (AUTHORS, '>:utf8', 'authors.js');
 print AUTHORS 'var authors=\'';
 
 #####################################
@@ -96,9 +96,7 @@ sub printOrgsAndMembers {
 	######################
 	# iterate through keys
 	######################
-	my @sorted_suborgs = [];
 	my @sorted_orgs = [];
-	my @orgs_and_authors = [];
 	
 	for my $org_key(keys %organization_members) {
 		#######################################################################
@@ -114,7 +112,7 @@ sub printOrgsAndMembers {
 
 		listMembers($org_key);
 		$contains_organizations= '';
-		@sorted_suborgs = [];
+		@sorted_orgs = [];
 		@contains_organizations = [];
 
 		################################################
@@ -143,29 +141,15 @@ sub printOrgsAndMembers {
 		# Generate javascript hash containing the memberships
 		#####################################################
 		if (length($org_key) > 1 && length($members) > 1 && defined($all_names{$org_key})) {
-			################################################################
-			# Build sortable array of organizations associated with authors
-			################################################################
-			#print AUTHORS "$org_key\t$all_names{$org_key}\t$members" . '@';
-			push @orgs_and_authors, $all_names{$org_key} . '@' . "$org_key\t$all_names{$org_key}\t$members";
+			print AUTHORS "$org_key\t$all_names{$org_key}\t$members" . '@';
 			if ($contains_organizations ne '') {
-				@sorted_suborgs = sort @contains_organizations;
-				$contains_organizations = join(" ", @sorted_suborgs);
+				@sorted_orgs = sort @contains_organizations;
+				$contains_organizations = join(" ", @sorted_orgs);
 				$contains_organizations =~ s/ ARRAY.*$//;
 				print SUBORGS "suborgs[\"$org_key\"]=\"$contains_organizations\";\n";
 				}
 			}
 		}
-	##################################
-	# print sorted org and author file
-	##################################
-	@sorted_orgs = sort @orgs_and_authors;
-
-	foreach my $org(@sorted_orgs) {
-		$org =~ s/^.*@//;
-		print AUTHORS "$org" . '@';
-		}
-	print AUTHORS '\';';
 	}
 
 open (INFILE, $infile) or die("Unable to open data file \"$infile\"");
@@ -250,6 +234,7 @@ foreach $line(@source_data) {
 
 	printOrgsAndMembers();
 	printOrgHierarchy();
+	print AUTHORS '\';';
 	close (AUTHORS);
 	close (SUBORGS);
 	close (PARENTORGS);
